@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.ico" type="image/x-icon">
+<link rel="icon" href="../logo.png" type="image/png">
+<title>servers.json Generator - Infinite Servers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f5f7fa;--card:#fff;--border:#e2e6ea;--text:#1a1a2e;--text2:#555;--text3:#888;
+  --pri:#4f6ef7;--pri-hover:#3b5de5;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;
+  --radius:12px;--shadow:0 2px 12px rgba(0,0,0,.06);--mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--text2:#a1a1aa;--text3:#71717a;
+  --pri:#6d8cff;--pri-hover:#5a7af0;--shadow:0 2px 12px rgba(0,0,0,.3);
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+a{color:var(--pri);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:10}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:20px;font-weight:700;letter-spacing:-.5px}
+.logo strong{color:var(--pri)}
+.header-nav{display:flex;gap:8px}
+.header-nav a{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);transition:all .2s}
+.header-nav a.active{background:var(--pri);color:#fff}
+.header-nav a:hover:not(.active){background:var(--border);text-decoration:none}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--text);transition:all .2s;display:inline-flex;align-items:center}
+.theme-btn:hover{border-color:var(--pri);color:var(--pri)}
+
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.card-title{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title svg{width:18px;height:18px;color:var(--pri)}
+
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:5px}
+.form-hint{font-size:12px;color:var(--text3);margin-top:3px}
+.form-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--sans);background:var(--card);color:var(--text);transition:border .2s}
+.form-input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(79,110,247,.15)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:14px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:all .2s}
+.btn.pri{background:var(--pri);color:#fff}
+.btn.pri:hover{background:var(--pri-hover)}
+.btn.sec{background:var(--border);color:var(--text)}
+.btn.sec:hover{background:var(--text3);color:#fff}
+.btn.danger{background:var(--err);color:#fff}
+.btn.danger:hover{background:#dc2626}
+.btn.sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* server list */
+.server-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:200px;overflow-y:auto}
+.server-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;font-size:14px}
+.server-item:hover{border-color:var(--pri);background:rgba(79,110,247,.04)}
+.server-item.active{border-color:var(--pri);background:rgba(79,110,247,.08);font-weight:500}
+.server-item .srv-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.server-item .srv-region{font-size:12px;color:var(--text3)}
+.server-item .srv-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px;border-radius:4px;font-size:16px;line-height:1}
+.server-item .srv-del:hover{color:var(--err);background:rgba(239,68,68,.1)}
+.server-count{font-size:12px;color:var(--text3);margin-bottom:8px}
+
+.json-area{width:100%;min-height:400px;padding:16px;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;tab-size:2}
+.json-area:focus{outline:none;border-color:var(--pri)}
+.json-toolbar{display:flex;gap:6px;margin-top:8px}
+
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;z-index:1000;transform:translateY(80px);opacity:0;transition:all .3s ease}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:var(--ok)}
+.toast.err{background:var(--err)}
+
+.section-divider{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px dashed var(--border)}
+
+.token-row{display:flex;gap:6px}
+.token-row .form-input{flex:1}
+.icon-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;transition:all .2s;flex-shrink:0}
+.icon-btn:hover{border-color:var(--pri);color:var(--pri)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-state svg{width:48px;height:48px;margin-bottom:12px;opacity:.4}
+.empty-state p{font-size:14px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Infinite<strong>Servers</strong></div>
+    <div class="header-nav">
+      <a href="index.html" class="active">servers.json</a>
+      <a href="../config/index.html">config.json</a>
+    </div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()" title="切换主题"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"></path></svg></button>
+</div>
+
+<div class="container">
+  <div class="grid">
+    <!-- Left: Server list + editor -->
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1"/><circle cx="6" cy="18" r="1"/></svg>
+          服务器列表
+        </div>
+        <div class="server-count" id="serverCount">0 台服务器</div>
+        <div class="server-list" id="serverList"></div>
+        <div class="btn-row">
+          <button class="btn pri sm" onclick="addServer()">+ 添加服务器</button>
+          <button class="btn sec sm" onclick="loadExample()">加载示例</button>
+          <button class="btn sec sm" onclick="resetAll()">重置</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px" id="editorCard">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          编辑服务器
+        </div>
+        <div id="editorForm">
+          <div class="form-group">
+            <label class="form-label">服务器名称 *</label>
+            <input class="form-input" id="e-name" type="text" placeholder="My Server" oninput="onEdit()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">推送令牌 *</label>
+            <div class="token-row">
+              <input class="form-input" id="e-token" type="text" placeholder="自动生成" oninput="onEdit()">
+              <button class="icon-btn" onclick="genToken()" title="生成随机令牌"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></button>
+            </div>
+            <div class="form-hint">Agent 推送时使用的认证令牌</div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">地区代码</label>
+              <input class="form-input" id="e-region" type="text" placeholder="CN" maxlength="2" oninput="onRegionInput()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">位置名称</label>
+              <input class="form-input" id="e-location" type="text" placeholder="Beijing" oninput="onEdit()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">标签（逗号分隔）</label>
+            <input class="form-input" id="e-tags" type="text" placeholder="Production, GPU" oninput="onEdit()">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">IPv4 遮罩</label>
+              <input class="form-input" id="e-ip-mask" type="text" placeholder="x.x.*.*" oninput="onEdit()">
+              <div class="form-hint">如 <code>x.x.*.*</code> → 1.2.*.*</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">IPv6 遮罩（可选）</label>
+              <input class="form-input" id="e-ip6-mask" type="text" placeholder="留空则用 IPv4 遮罩" oninput="onEdit()">
+              <div class="form-hint">如 <code>2001:0db8:*:*:*:*:*:*</code></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">到期日期</label>
+              <input class="form-input" id="e-expiry" type="date" oninput="onEdit()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">购买日期</label>
+              <input class="form-input" id="e-purchase" type="date" oninput="onEdit()">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn pri sm" onclick="saveServer()">保存</button>
+            <button class="btn sec sm" onclick="duplicateServer()">复制</button>
+            <button class="btn danger sm" onclick="deleteServer()">删除</button>
+          </div>
+        </div>
+        <div class="empty-state" id="editorEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+          <p>选择左侧服务器进行编辑</p>
+          <button class="btn pri sm" onclick="addServer()">+ 添加第一台服务器</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: JSON Preview -->
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 18l-6-6 6-6M16 6l6 6-6 6"/></svg>
+          JSON 预览
+        </div>
+        <textarea class="json-area" id="jsonPreview" spellcheck="false" oninput="onJsonEdit()"></textarea>
+        <div class="json-toolbar">
+          <button class="btn pri sm" onclick="copyJson()">复制</button>
+          <button class="btn sec sm" onclick="downloadJson()">下载 servers.json</button>
+          <button class="btn sec sm" onclick="formatJson()">格式化</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'is_servers_generator';
+const $ = id => document.getElementById(id);
+
+let servers = {};
+let activeIdx = -1;
+
+/* ── Theme ── */
+const ICO_SUN = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4.2"/><path d="M12 1.5v2.5M12 20v2.5M4 12H1.5M22.5 12H20M5.6 5.6 3.9 3.9M20.1 20.1l-1.7-1.7M18.4 5.6l1.7-1.7M3.9 20.1l1.7-1.7"/></svg>';
+const ICO_MOON = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>';
+function toggleTheme(){
+  const d = document.documentElement;
+  const isDark = d.getAttribute('data-theme')==='dark';
+  d.setAttribute('data-theme', isDark?'':'dark');
+  localStorage.setItem('is_theme', isDark?'':'dark');
+  $('.theme-btn').innerHTML = isDark?ICO_MOON:ICO_SUN;
+}
+(function(){
+  const t = localStorage.getItem('is_theme');
+  if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');$('.theme-btn').innerHTML=ICO_SUN;}
+})();
+
+/* ── Toast ── */
+function toast(msg, ok=true){
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'toast '+(ok?'ok':'err')+' show';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=> el.classList.remove('show'), 2500);
+}
+
+/* ── Region auto-fill ── */
+const COUNTRY_NAMES = {
+  AD:"Andorra",AE:"United Arab Emirates",AF:"Afghanistan",AG:"Antigua and Barbuda",
+  AL:"Albania",AM:"Armenia",AO:"Angola",AR:"Argentina",AT:"Austria",
+  AU:"Australia",AZ:"Azerbaijan",BA:"Bosnia and Herzegovina",BB:"Barbados",
+  BD:"Bangladesh",BE:"Belgium",BF:"Burkina Faso",BG:"Bulgaria",BH:"Bahrain",
+  BI:"Burundi",BJ:"Benin",BN:"Brunei",BO:"Bolivia",BR:"Brazil",
+  BS:"Bahamas",BT:"Bhutan",BW:"Botswana",BY:"Belarus",BZ:"Belize",
+  CA:"Canada",CD:"DR Congo",CF:"Central African Republic",CG:"Congo",
+  CH:"Switzerland",CI:"Ivory Coast",CL:"Chile",CM:"Cameroon",CN:"China",
+  CO:"Colombia",CR:"Costa Rica",CU:"Cuba",CV:"Cape Verde",CY:"Cyprus",
+  CZ:"Czech Republic",DE:"Germany",DJ:"Djibouti",DK:"Denmark",DM:"Dominica",
+  DO:"Dominican Republic",DZ:"Algeria",EC:"Ecuador",EE:"Estonia",EG:"Egypt",
+  ER:"Eritrea",ES:"Spain",ET:"Ethiopia",FI:"Finland",FJ:"Fiji",
+  FM:"Micronesia",FR:"France",GA:"Gabon",GB:"United Kingdom",GD:"Grenada",
+  GE:"Georgia",GH:"Ghana",GM:"Gambia",GN:"Guinea",GQ:"Equatorial Guinea",
+  GR:"Greece",GT:"Guatemala",GW:"Guinea-Bissau",GY:"Guyana",HN:"Honduras",
+  HR:"Croatia",HT:"Haiti",HU:"Hungary",ID:"Indonesia",IE:"Ireland",
+  IL:"Israel",IN:"India",IQ:"Iraq",IR:"Iran",IS:"Iceland",
+  IT:"Italy",JM:"Jamaica",JO:"Jordan",JP:"Japan",KE:"Kenya",
+  KG:"Kyrgyzstan",KH:"Cambodia",KI:"Kiribati",KM:"Comoros",KN:"Saint Kitts and Nevis",
+  KP:"North Korea",KR:"South Korea",KW:"Kuwait",KZ:"Kazakhstan",LA:"Laos",
+  LB:"Lebanon",LC:"Saint Lucia",LI:"Liechtenstein",LK:"Sri Lanka",LR:"Liberia",
+  LS:"Lesotho",LT:"Lithuania",LU:"Luxembourg",LV:"Latvia",LY:"Libya",
+  MA:"Morocco",MC:"Monaco",MD:"Moldova",ME:"Montenegro",MG:"Madagascar",
+  MH:"Marshall Islands",MK:"North Macedonia",ML:"Mali",MM:"Myanmar",MN:"Mongolia",
+  MO:"Macau",MR:"Mauritania",MT:"Malta",MU:"Mauritius",MV:"Maldives",
+  MW:"Malawi",MX:"Mexico",MY:"Malaysia",MZ:"Mozambique",NA:"Namibia",
+  NE:"Nigeria",NG:"Nigeria",NI:"Nicaragua",NL:"Netherlands",NO:"Norway",
+  NP:"Nepal",NR:"Nauru",NZ:"New Zealand",OM:"Oman",PA:"Panama",
+  PE:"Peru",PG:"Papua New Guinea",PH:"Philippines",PK:"Pakistan",PL:"Poland",
+  PS:"Palestine",PT:"Portugal",PW:"Palau",PY:"Paraguay",QA:"Qatar",
+  RO:"Romania",RS:"Serbia",RU:"Russia",RW:"Rwanda",SA:"Saudi Arabia",
+  SB:"Solomon Islands",SC:"Seychelles",SD:"Sudan",SE:"Sweden",SG:"Singapore",
+  SI:"Slovenia",SK:"Slovakia",SL:"Sierra Leone",SM:"San Marino",SN:"Senegal",
+  SO:"Somalia",SR:"Suriname",SS:"South Sudan",SV:"El Salvador",SY:"Syria",
+  SZ:"Eswatini",TD:"Chad",TG:"Togo",TH:"Thailand",TJ:"Tajikistan",
+  TL:"Timor-Leste",TM:"Turkmenistan",TN:"Tunisia",TO:"Tonga",TR:"Turkey",
+  TT:"Trinidad and Tobago",TV:"Tuvalu",TW:"Taiwan",TZ:"Tanzania",UA:"Ukraine",
+  UG:"Uganda",US:"United States",UY:"Uruguay",UZ:"Uzbekistan",VA:"Vatican City",
+  VC:"Saint Vincent",VE:"Venezuela",VN:"Vietnam",VU:"Vanuatu",WS:"Samoa",
+  YE:"Yemen",ZA:"South Africa",ZM:"Zambia",ZW:"Zimbabwe"
+};
+function onRegionInput(){
+  const code = $('e-region').value.trim().toUpperCase();
+  const loc = $('e-location');
+  if(code.length === 2 && COUNTRY_NAMES[code] && !loc.value.trim()){
+    loc.value = COUNTRY_NAMES[code];
+  }
+  onEdit();
+}
+
+/* ── Generate token ── */
+function genToken(){
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  $('e-token').value = Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+  onEdit();
+  toast('已生成随机令牌');
+}
+
+/* ── Render server list ── */
+function renderList(){
+  const names = Object.keys(servers);
+  $('serverCount').textContent = names.length + ' 台服务器';
+  const el = $('serverList');
+  if(!names.length){
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>暂无服务器</p></div>';
+    return;
+  }
+  el.innerHTML = names.map((n,i)=>{
+    const s = servers[n];
+    const region = s.region ? s.region.toUpperCase() : '';
+    return `<div class="server-item ${i===activeIdx?'active':''}" onclick="selectServer(${i})">
+      <span class="srv-name">${esc(n)}</span>
+      ${region?`<span class="srv-region">${esc(region)}</span>`:''}
+      <button class="srv-del" onclick="event.stopPropagation();removeServer('${esc(n)}')" title="删除">×</button>
+    </div>`;
+  }).join('');
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ── Select server ── */
+function selectServer(idx){
+  const names = Object.keys(servers);
+  if(idx<0||idx>=names.length) return;
+  activeIdx = idx;
+  const name = names[idx];
+  const s = servers[name];
+  $('editorForm').style.display = 'block';
+  $('editorEmpty').style.display = 'none';
+  $('e-name').value = name;
+  $('e-token').value = s.token || '';
+  $('e-region').value = s.region || '';
+  $('e-location').value = s.location || '';
+  $('e-tags').value = (s.tags||[]).join(', ');
+  $('e-ip-mask').value = s.ip_mask || '';
+  $('e-ip6-mask').value = s.ip6_mask || '';
+  $('e-expiry').value = s.expiry || '';
+  $('e-purchase').value = s.purchase_date || '';
+  renderList();
+}
+
+/* ── Add server ── */
+function addServer(){
+  let name = 'Server ' + (Object.keys(servers).length + 1);
+  while(servers[name]) name = 'Server ' + (++counter);
+  servers[name] = { token: '' };
+  genToken();
+  $('e-token').value = '';
+  activeIdx = Object.keys(servers).indexOf(name);
+  selectServer(activeIdx);
+  renderList();
+  gen();
+  toast('已添加服务器');
+}
+let counter = Object.keys(servers).length;
+
+/* ── Save server ── */
+function saveServer(){
+  if(activeIdx<0) return;
+  const names = Object.keys(servers);
+  const oldName = names[activeIdx];
+  const newName = $('e-name').value.trim();
+  if(!newName){ toast('请输入服务器名称', false); return; }
+  if(!$('e-token').value.trim()){ toast('请输入推送令牌', false); return; }
+  if(newName !== oldName && servers[newName]){ toast('服务器名称已存在', false); return; }
+
+  const data = { token: $('e-token').value.trim() };
+  const region = $('e-region').value.trim().toUpperCase();
+  const location = $('e-location').value.trim();
+  const tags = $('e-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const ipMask = $('e-ip-mask').value.trim();
+  const ip6Mask = $('e-ip6-mask').value.trim();
+  const expiry = $('e-expiry').value;
+  const purchase = $('e-purchase').value;
+
+  if(region) data.region = region;
+  if(location) data.location = location;
+  if(tags.length) data.tags = tags;
+  if(ipMask) data.ip_mask = ipMask;
+  if(ip6Mask) data.ip6_mask = ip6Mask;
+  if(expiry) data.expiry = expiry;
+  if(purchase) data.purchase_date = purchase;
+
+  delete servers[oldName];
+  servers[newName] = data;
+  activeIdx = Object.keys(servers).indexOf(newName);
+  renderList();
+  gen();
+  toast('已保存');
+}
+
+/* ── Duplicate ── */
+function duplicateServer(){
+  if(activeIdx<0) return;
+  const name = Object.keys(servers)[activeIdx];
+  let newName = name + ' (copy)';
+  while(servers[newName]) newName += ' copy';
+  servers[newName] = { ...JSON.parse(JSON.stringify(servers[name])) };
+  activeIdx = Object.keys(servers).indexOf(newName);
+  selectServer(activeIdx);
+  renderList();
+  gen();
+  toast('已复制');
+}
+
+/* ── Delete ── */
+function deleteServer(){
+  if(activeIdx<0) return;
+  const name = Object.keys(servers)[activeIdx];
+  if(!confirm('确定删除 "'+name+'" ？')) return;
+  delete servers[name];
+  activeIdx = -1;
+  $('editorForm').style.display = 'none';
+  $('editorEmpty').style.display = 'block';
+  renderList();
+  gen();
+  toast('已删除');
+}
+function removeServer(name){
+  if(!confirm('确定删除 "'+name+'" ？')) return;
+  delete servers[name];
+  if(activeIdx>=Object.keys(servers).length) activeIdx = -1;
+  if(activeIdx>=0) selectServer(activeIdx);
+  else { $('editorForm').style.display='none'; $('editorEmpty').style.display='block'; }
+  renderList();
+  gen();
+  toast('已删除');
+}
+
+/* ── Collect from editor ── */
+function onEdit(){
+  if(activeIdx<0) return;
+  const names = Object.keys(servers);
+  const oldName = names[activeIdx];
+  const newName = $('e-name').value.trim() || oldName;
+  const data = { token: $('e-token').value.trim() };
+  const region = $('e-region').value.trim().toUpperCase();
+  const location = $('e-location').value.trim();
+  const tags = $('e-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const ipMask = $('e-ip-mask').value.trim();
+  const ip6Mask = $('e-ip6-mask').value.trim();
+  const expiry = $('e-expiry').value;
+  const purchase = $('e-purchase').value;
+  if(region) data.region = region;
+  if(location) data.location = location;
+  if(tags.length) data.tags = tags;
+  if(ipMask) data.ip_mask = ipMask;
+  if(ip6Mask) data.ip6_mask = ip6Mask;
+  if(expiry) data.expiry = expiry;
+  if(purchase) data.purchase_date = purchase;
+  if(newName !== oldName){ delete servers[oldName]; }
+  servers[newName] = data;
+  renderList();
+  gen();
+}
+
+/* ── Generate JSON ── */
+function gen(){
+  const data = { servers };
+  $('jsonPreview').value = JSON.stringify(data, null, 2);
+  saveLocal();
+}
+
+/* ── JSON → form sync ── */
+let syncing = false;
+function onJsonEdit(){
+  if(syncing) return;
+  try{
+    const data = JSON.parse($('jsonPreview').value);
+    servers = data.servers || {};
+    activeIdx = -1;
+    $('editorForm').style.display = 'none';
+    $('editorEmpty').style.display = 'block';
+    renderList();
+    saveLocal();
+  }catch(e){}
+}
+
+/* ── Load example ── */
+function loadExample(){
+  servers = {
+    "My Server": {
+      token: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+      region: "CN",
+      location: "Beijing",
+      tags: ["Production"],
+      ip_mask: "x.x.*.*",
+      ip6_mask: "2001:0db8:*:*:*:*:*:*",
+      expiry: "2026-12-31",
+      purchase_date: "2026-01-01"
+    }
+  };
+  activeIdx = -1;
+  $('editorForm').style.display = 'none';
+  $('editorEmpty').style.display = 'block';
+  renderList();
+  gen();
+  toast('已加载示例');
+}
+
+/* ── Reset ── */
+function resetAll(){
+  if(!confirm('确定重置所有数据？')) return;
+  servers = {};
+  activeIdx = -1;
+  localStorage.removeItem(STORAGE_KEY);
+  $('editorForm').style.display = 'none';
+  $('editorEmpty').style.display = 'block';
+  renderList();
+  gen();
+  toast('已重置');
+}
+
+/* ── Local storage ── */
+function saveLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, $('jsonPreview').value); }catch(e){}
+}
+function loadLocal(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved){
+      const data = JSON.parse(saved);
+      servers = data.servers || {};
+      $('jsonPreview').value = JSON.stringify(data, null, 2);
+      renderList();
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+/* ── Copy ── */
+function copyJson(){
+  const text = $('jsonPreview').value;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text)
+      .then(()=> toast('已复制到剪贴板'))
+      .catch(()=> fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try{
+    document.execCommand('copy');
+    toast('已复制到剪贴板');
+  }catch(e){
+    toast('复制失败，请手动选择复制', false);
+  }
+  document.body.removeChild(ta);
+}
+
+/* ── Download ── */
+function downloadJson(){
+  const blob = new Blob([$('jsonPreview').value], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'servers.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已开始下载');
+}
+
+/* ── Format ── */
+function formatJson(){
+  try{
+    const data = JSON.parse($('jsonPreview').value);
+    $('jsonPreview').value = JSON.stringify(data, null, 2);
+    toast('已格式化');
+  }catch(e){ toast('JSON 格式错误', false); }
+}
+
+/* ── Init ── */
+if(!loadLocal()) { renderList(); gen(); }
+$('editorForm').style.display = 'none';
+$('editorEmpty').style.display = 'block';
+</script>
+</body>
+</html>

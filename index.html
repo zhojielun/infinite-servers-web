@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="icon" href="logo.png" type="image/png">
+<title>Infinite Servers - 配置生成工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f7fa;--card:#fff;--border:#e2e6ea;--text:#1a1a2e;--text2:#555;--text3:#888;--pri:#4f6ef7;--pri-hover:#3b5de5;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.06);--sans:'IBM Plex Sans',system-ui,sans-serif}
+[data-theme="dark"]{--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--text2:#a1a1aa;--text3:#71717a;--pri:#6d8cff;--pri-hover:#5a7af0;--shadow:0 2px 12px rgba(0,0,0,.3)}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .3s,color .3s}
+.wrap{max-width:480px;width:100%;padding:24px}
+.logo{font-size:28px;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:-.5px}
+.logo strong{color:var(--pri)}
+.sub{text-align:center;color:var(--text3);font-size:14px;margin-bottom:32px}
+.cards{display:flex;flex-direction:column;gap:14px}
+.card-link{display:flex;align-items:center;gap:16px;padding:20px 24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);text-decoration:none;color:var(--text);transition:all .2s}
+.card-link:hover{border-color:var(--pri);transform:translateY(-2px);box-shadow:0 4px 20px rgba(79,110,247,.15);text-decoration:none}
+.card-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-icon svg{width:22px;height:22px}
+.ci-blue{background:rgba(79,110,247,.1);color:var(--pri)}
+.ci-green{background:rgba(34,197,94,.1);color:#22c55e}
+.card-info{flex:1}
+.card-name{font-size:16px;font-weight:600;margin-bottom:2px}
+.card-desc{font-size:13px;color:var(--text3)}
+.card-arrow{color:var(--text3);font-size:18px}
+.theme-btn{position:fixed;top:16px;right:16px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--text);transition:all .2s;display:inline-flex;align-items:center}
+.theme-btn:hover{border-color:var(--pri);color:var(--pri)}
+.footer{text-align:center;margin-top:32px;font-size:12px;color:var(--text3)}
+.footer a{color:var(--pri);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<button class="theme-btn" onclick="toggleTheme()" title="切换主题"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"></path></svg></button>
+
+<div class="wrap">
+  <div class="logo">Infinite<strong>Servers</strong></div>
+  <div class="sub">配置文件生成工具</div>
+
+  <div class="cards">
+    <a class="card-link" href="servers/index.html">
+      <div class="card-icon ci-blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1"/><circle cx="6" cy="18" r="1"/></svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">servers.json</div>
+        <div class="card-desc">服务器列表配置 — 管理被监控的服务器节点</div>
+      </div>
+      <span class="card-arrow">→</span>
+    </a>
+
+    <a class="card-link" href="config/index.html">
+      <div class="card-icon ci-green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">config.json</div>
+        <div class="card-desc">全局配置 — 密码、推送、历史、Telegram 通知</div>
+      </div>
+      <span class="card-arrow">→</span>
+    </a>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/zhojielun/infinite-servers" target="_blank">Infinite Servers</a> · 配置生成工具
+  </div>
+</div>
+
+<script>
+const ICO_SUN='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4.2"/><path d="M12 1.5v2.5M12 20v2.5M4 12H1.5M22.5 12H20M5.6 5.6 3.9 3.9M20.1 20.1l-1.7-1.7M18.4 5.6l1.7-1.7M3.9 20.1l1.7-1.7"/></svg>';
+const ICO_MOON='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>';
+function toggleTheme(){
+  const d=document.documentElement,isDark=d.getAttribute('data-theme')==='dark';
+  d.setAttribute('data-theme',isDark?'':'dark');
+  localStorage.setItem('is_theme',isDark?'':'dark');
+  document.querySelector('.theme-btn').innerHTML=isDark?ICO_MOON:ICO_SUN;
+}
+(function(){if(localStorage.getItem('is_theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');document.querySelector('.theme-btn').innerHTML=ICO_SUN;}})();
+</script>
+</body>
+</html>

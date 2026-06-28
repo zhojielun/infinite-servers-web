@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.ico" type="image/x-icon">
+<link rel="icon" href="../logo.png" type="image/png">
+<title>config.json Generator - Infinite Servers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f5f7fa;--card:#fff;--border:#e2e6ea;--text:#1a1a2e;--text2:#555;--text3:#888;
+  --pri:#4f6ef7;--pri-hover:#3b5de5;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;
+  --radius:12px;--shadow:0 2px 12px rgba(0,0,0,.06);--mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--text:#e4e4e7;--text2:#a1a1aa;--text3:#71717a;
+  --pri:#6d8cff;--pri-hover:#5a7af0;--shadow:0 2px 12px rgba(0,0,0,.3);
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+a{color:var(--pri);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:10}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:20px;font-weight:700;letter-spacing:-.5px}
+.logo strong{color:var(--pri)}
+.header-nav{display:flex;gap:8px}
+.header-nav a{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);transition:all .2s}
+.header-nav a.active{background:var(--pri);color:#fff}
+.header-nav a:hover:not(.active){background:var(--border);text-decoration:none}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--text);transition:all .2s;display:inline-flex;align-items:center}
+.theme-btn:hover{border-color:var(--pri);color:var(--pri)}
+
+/* layout */
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+
+/* card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.card-title{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title svg{width:18px;height:18px;color:var(--pri)}
+
+/* form */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px}
+.form-hint{font-size:12px;color:var(--text3);margin-top:4px}
+.form-input,.form-select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--sans);background:var(--card);color:var(--text);transition:border .2s}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(79,110,247,.15)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+
+/* toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info{flex:1}
+.toggle-name{font-size:14px;font-weight:500}
+.toggle-desc{font-size:12px;color:var(--text3);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:24px;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked+.toggle-slider{background:var(--pri)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border:none;border-radius:8px;font-size:14px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:all .2s}
+.btn.pri{background:var(--pri);color:#fff}
+.btn.pri:hover{background:var(--pri-hover)}
+.btn.sec{background:var(--border);color:var(--text)}
+.btn.sec:hover{background:var(--text3);color:#fff}
+.btn.danger{background:var(--err);color:#fff}
+.btn.danger:hover{background:#dc2626}
+.btn.sm{padding:6px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+
+/* json preview */
+.json-wrap{position:relative}
+.json-area{width:100%;min-height:320px;padding:16px;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;tab-size:2}
+.json-area:focus{outline:none;border-color:var(--pri)}
+.json-toolbar{display:flex;gap:6px;margin-top:8px}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;z-index:1000;transform:translateY(80px);opacity:0;transition:all .3s ease}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:var(--ok)}
+.toast.err{background:var(--err)}
+
+/* section divider */
+.section-divider{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:20px 0 12px;padding-bottom:6px;border-bottom:1px dashed var(--border)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Infinite<strong>Servers</strong></div>
+    <div class="header-nav">
+      <a href="../servers/index.html">servers.json</a>
+      <a href="index.html" class="active">config.json</a>
+    </div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()" title="切换主题"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"></path></svg></button>
+</div>
+
+<div class="container">
+  <div class="grid">
+    <!-- Left: Form -->
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          配置编辑
+        </div>
+
+        <!-- Auth -->
+        <div class="form-group">
+          <label class="form-label">登录密码</label>
+          <input class="form-input" id="password" type="text" placeholder="留空则跳过认证">
+          <div class="form-hint">为空表示不需要密码即可访问</div>
+        </div>
+
+        <!-- SSE -->
+        <div class="section-divider">实时推送</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">SSE 实时推送</div>
+            <div class="toggle-desc">启用 Server-Sent Events 实时数据推送</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="sse" onchange="gen()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <div class="form-group">
+            <label class="form-label">推送间隔（秒）</label>
+            <input class="form-input" id="interval" type="number" min="1" max="3600" value="5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">历史写入间隔（分钟）</label>
+            <input class="form-input" id="history-interval" type="number" min="0.5" max="1440" step="0.5" value="1">
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="section-divider">数据保留</div>
+        <div class="form-group">
+          <label class="form-label">历史数据保留天数</label>
+          <input class="form-input" id="history-days" type="number" min="1" max="365" value="30">
+        </div>
+
+        <!-- CORS -->
+        <div class="section-divider">跨域设置</div>
+        <div class="form-group">
+          <label class="form-label">CORS 允许来源</label>
+          <input class="form-input" id="cors-origins" type="text" value="*" placeholder="* 或逗号分隔的域名">
+          <div class="form-hint">多个来源用逗号分隔，如: *.pages.dev,*.workers.dev</div>
+        </div>
+
+        <!-- Telegram -->
+        <div class="section-divider">Telegram 通知</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">启用 Telegram 通知</div>
+            <div class="toggle-desc">到期提醒 + 离线告警</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="tg-enabled" onchange="gen()"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="tg-fields" style="display:none;margin-top:12px">
+          <div class="form-group">
+            <label class="form-label">Bot Token</label>
+            <input class="form-input" id="tg-token" type="text" placeholder="123456:ABC-DEF...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chat ID</label>
+            <input class="form-input" id="tg-chatid" type="text" placeholder="-1001234567890">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">到期检查 Cron</label>
+              <input class="form-input" id="tg-cron" type="text" placeholder="0 0 * * *">
+              <div class="form-hint">默认每天 UTC 00:00</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">离线检查 Cron</label>
+              <input class="form-input" id="tg-offline-check" type="text" placeholder="*/5 * * * *">
+              <div class="form-hint">默认每 5 分钟</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">离线阈值（秒）</label>
+              <input class="form-input" id="tg-offline-threshold" type="number" min="60" max="3600" value="900">
+              <div class="form-hint">超过此时间未上报视为离线</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">离线告警</label>
+              <div class="toggle-row" style="border:none;padding:0">
+                <div class="toggle-info">
+                  <div class="toggle-name" style="font-size:13px">启用离线通知</div>
+                </div>
+                <label class="toggle"><input type="checkbox" id="tg-notify-offline" onchange="gen()"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">提醒语言</label>
+              <select class="form-input" id="tg-language" onchange="gen()">
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="btn-row">
+          <button class="btn pri" onclick="gen()">生成配置</button>
+          <button class="btn sec" onclick="loadDefault()">加载默认配置</button>
+          <button class="btn sec" onclick="resetForm()">重置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: JSON Preview -->
+    <div>
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 18l-6-6 6-6M16 6l6 6-6 6"/></svg>
+          JSON 预览
+        </div>
+        <div class="json-wrap">
+          <textarea class="json-area" id="jsonPreview" spellcheck="false" oninput="onJsonEdit()"></textarea>
+        </div>
+        <div class="json-toolbar">
+          <button class="btn pri sm" onclick="copyJson()">复制</button>
+          <button class="btn sec sm" onclick="downloadJson()">下载 config.json</button>
+          <button class="btn sec sm" onclick="formatJson()">格式化</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'is_config_generator';
+const $ = id => document.getElementById(id);
+
+/* ── Theme ── */
+const ICO_SUN = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4.2"/><path d="M12 1.5v2.5M12 20v2.5M4 12H1.5M22.5 12H20M5.6 5.6 3.9 3.9M20.1 20.1l-1.7-1.7M18.4 5.6l1.7-1.7M3.9 20.1l1.7-1.7"/></svg>';
+const ICO_MOON = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>';
+function toggleTheme(){
+  const d = document.documentElement;
+  const isDark = d.getAttribute('data-theme')==='dark';
+  d.setAttribute('data-theme', isDark?'':'dark');
+  localStorage.setItem('is_theme', isDark?'':'dark');
+  $('.theme-btn').innerHTML = isDark?ICO_MOON:ICO_SUN;
+}
+(function(){
+  const t = localStorage.getItem('is_theme');
+  if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');$('.theme-btn').innerHTML=ICO_SUN;}
+})();
+
+/* ── Toast ── */
+function toast(msg, ok=true){
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'toast '+(ok?'ok':'err')+' show';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=> el.classList.remove('show'), 2500);
+}
+
+/* ── Telegram toggle ── */
+$('tg-enabled').addEventListener('change', function(){
+  $('tg-fields').style.display = this.checked ? 'block' : 'none';
+});
+
+/* ── Collect form data ── */
+function collect(){
+  const data = {};
+  const pw = $('password').value.trim();
+  if(pw) data.password = pw;
+  data.sse = $('sse').checked;
+  data.interval = Number($('interval').value) || 5;
+  data["history-interval"] = Number($('history-interval').value) || 1;
+  data["history-days"] = Number($('history-days').value) || 30;
+  data["cors-origins"] = $('cors-origins').value.trim() || '*';
+  if($('tg-enabled').checked){
+    const bt = $('tg-token').value.trim();
+    const cid = $('tg-chatid').value.trim();
+    if(bt || cid){
+      data.telegram = {
+        enabled: true,
+        bot_token: bt,
+        chat_id: cid,
+        cron: $('tg-cron').value.trim() || '0 0 * * *',
+        offline_check: $('tg-offline-check').value.trim() || '*/5 * * * *',
+        offline_threshold: Number($('tg-offline-threshold').value) || 900,
+        notify_offline: $('tg-notify-offline').checked,
+        language: $('tg-language').value || 'en',
+      };
+    }
+  }
+  return data;
+}
+
+/* ── Generate JSON ── */
+function gen(){
+  const data = collect();
+  const json = JSON.stringify(data, null, 2);
+  $('jsonPreview').value = json;
+  saveLocal();
+  toast('配置已生成');
+}
+
+/* ── JSON preview → form sync ── */
+let syncing = false;
+function onJsonEdit(){
+  if(syncing) return;
+  try{
+    const data = JSON.parse($('jsonPreview').value);
+    syncing = true;
+    $('password').value = data.password || '';
+    $('sse').checked = !!data.sse;
+    $('interval').value = data.interval ?? 5;
+    $('history-interval').value = data["history-interval"] ?? 1;
+    $('history-days').value = data["history-days"] ?? 30;
+    $('cors-origins').value = data["cors-origins"] || '*';
+    const tg = data.telegram || {};
+    $('tg-enabled').checked = !!tg.enabled;
+    $('tg-fields').style.display = tg.enabled ? 'block' : 'none';
+    $('tg-token').value = tg.bot_token || '';
+    $('tg-chatid').value = tg.chat_id || '';
+    $('tg-cron').value = tg.cron || '0 0 * * *';
+    $('tg-offline-check').value = tg.offline_check || '*/5 * * * *';
+    $('tg-offline-threshold').value = tg.offline_threshold ?? 900;
+    $('tg-notify-offline').checked = !!tg.notify_offline;
+    $('tg-language').value = tg.language || 'en';
+    saveLocal();
+  }catch(e){}
+  syncing = false;
+}
+
+/* ── Load default ── */
+function loadDefault(){
+  $('password').value = '';
+  $('sse').checked = false;
+  $('interval').value = 5;
+  $('history-interval').value = 1;
+  $('history-days').value = 30;
+  $('cors-origins').value = '*';
+  $('tg-enabled').checked = false;
+  $('tg-fields').style.display = 'none';
+  $('tg-token').value = '';
+  $('tg-chatid').value = '';
+  $('tg-cron').value = '0 0 * * *';
+  $('tg-offline-check').value = '*/5 * * * *';
+  $('tg-offline-threshold').value = 900;
+  $('tg-notify-offline').checked = false;
+  $('tg-language').value = 'en';
+  gen();
+  toast('已加载默认配置');
+}
+
+/* ── Reset ── */
+function resetForm(){
+  localStorage.removeItem(STORAGE_KEY);
+  loadDefault();
+  toast('已重置');
+}
+
+/* ── Local storage ── */
+function saveLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, $('jsonPreview').value); }catch(e){}
+}
+function loadLocal(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved){
+      const data = JSON.parse(saved);
+      $('password').value = data.password || '';
+      $('sse').checked = !!data.sse;
+      $('interval').value = data.interval ?? 5;
+      $('history-interval').value = data["history-interval"] ?? 1;
+      $('history-days').value = data["history-days"] ?? 30;
+      $('cors-origins').value = data["cors-origins"] || '*';
+      const tg = data.telegram || {};
+      $('tg-enabled').checked = !!tg.enabled;
+      $('tg-fields').style.display = tg.enabled ? 'block' : 'none';
+      $('tg-token').value = tg.bot_token || '';
+      $('tg-chatid').value = tg.chat_id || '';
+      $('jsonPreview').value = JSON.stringify(data, null, 2);
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+/* ── Copy ── */
+function copyJson(){
+  const text = $('jsonPreview').value;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text)
+      .then(()=> toast('已复制到剪贴板'))
+      .catch(()=> fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try{
+    document.execCommand('copy');
+    toast('已复制到剪贴板');
+  }catch(e){
+    toast('复制失败，请手动选择复制', false);
+  }
+  document.body.removeChild(ta);
+}
+
+/* ── Download ── */
+function downloadJson(){
+  const blob = new Blob([$('jsonPreview').value], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'config.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已开始下载');
+}
+
+/* ── Format ── */
+function formatJson(){
+  try{
+    const data = JSON.parse($('jsonPreview').value);
+    $('jsonPreview').value = JSON.stringify(data, null, 2);
+    toast('已格式化');
+  }catch(e){ toast('JSON 格式错误', false); }
+}
+
+/* ── Init ── */
+if(!loadLocal()) gen();
+</script>
+</body>
+</html>
